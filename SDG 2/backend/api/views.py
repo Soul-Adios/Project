@@ -99,9 +99,14 @@ def leaderboard(request):
 @api_view(["GET"])
 @permission_classes([permissions.IsAuthenticated])
 def me(request):
+    total_weight = WasteSubmission.objects.filter(user=request.user).aggregate(Sum("weight_kg"))["weight_kg__sum"] or 0
+    total_points = float(total_weight)
+
     return Response({
         "id": request.user.id,
         "username": request.user.username,
         "email": request.user.email,
         "date_joined": request.user.date_joined,
+        "total_points": total_points,
+        "total_weight": total_weight,
     })

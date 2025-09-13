@@ -1,55 +1,53 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWaste } from "@/contexts/WasteContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ProgressRing } from "@/components/ui/progress-ring";
 import { useNavigate } from "react-router-dom";
-import {
-  Target,
-  Trophy,
-  Scale,
-  TrendingUp,
-  Plus,
-  Award,
-  Calendar,
-} from "lucide-react";
+import { Trophy, Scale, TrendingUp, Plus, Award, Calendar } from "lucide-react";
 import { format } from "date-fns";
 
 export const Dashboard: React.FC = () => {
-  const { user } = useAuth();
-  const { leaderboard, fetchUserStats } = useWaste();
+  const { user, loading: authLoading } = useAuth();
+  const { leaderboard, fetchUserStats, loading: wasteLoading } = useWaste();
   const navigate = useNavigate();
   const [userRank, setUserRank] = useState<number | null>(null);
 
+  // Fetch user stats on mount or when user changes
   useEffect(() => {
-    if (user?.id) {
-      fetchUserStats();
-    }
+    if (user?.id) fetchUserStats();
   }, [user?.id, fetchUserStats]);
 
+  // Calculate user rank whenever leaderboard updates
   useEffect(() => {
-  if (user && leaderboard.length > 0) {
-    const rankIndex = leaderboard.findIndex(
-      (entry) => entry.userId === user.id
-    );
-    setUserRank(rankIndex >= 0 ? rankIndex + 1 : null);
-  }
-}, [user, leaderboard]);
+    if (user && leaderboard.length > 0) {
+      const rankIndex = leaderboard.findIndex((entry) => entry.userId === user.id);
+      setUserRank(rankIndex >= 0 ? rankIndex + 1 : null);
+    }
+  }, [user, leaderboard]);
 
-  if (!user) return null;
+  // Show spinner while auth or waste data is loading
+  if (authLoading || wasteLoading || !user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-primary"></div>
+      </div>
+    );
+  }
 
   const totalPoints = user.totalPoints || 0;
   const totalWeight = user.totalWeight || 0;
   const joinDate = user.dateJoined ? new Date(user.dateJoined) : null;
-  const progressToGoal = Math.min((totalPoints / 300) * 100, 100);
+  const progressToGoal = Math.min((totalPoints / 100) * 100, 100);
 
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
+        {/* Welcome Section */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">
-            Welcome back, {user.username}! 🌱
+            Welcome, {user.username}! 🌱
           </h1>
           <p className="text-muted-foreground">
             Keep up the great work making our planet cleaner!
@@ -58,27 +56,23 @@ export const Dashboard: React.FC = () => {
 
         {/* Progress + Quick Stats */}
         <div className="grid lg:grid-cols-3 gap-6 mb-8">
-          {/* Goal Progress */}
           <Card className="lg:col-span-1 shadow-lg border-0">
             <CardContent className="p-6 text-center">
               <h3 className="text-lg font-semibold mb-4">Goal Progress</h3>
               <ProgressRing progress={progressToGoal} size={140}>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-primary">
-                    {totalPoints}
-                  </div>
-                  <div className="text-sm text-muted-foreground">/ 300 pts</div>
+                  <div className="text-2xl font-bold text-primary">{totalPoints}</div>
+                  <div className="text-sm text-muted-foreground">/ 100 pts</div>
                 </div>
               </ProgressRing>
               <p className="text-sm text-muted-foreground mt-4">
-                {300 - totalPoints > 0
-                  ? `${300 - totalPoints} points to reach your goal!`
+                {100 - totalPoints > 0
+                  ? `${100 - totalPoints} points to reach your goal!`
                   : "🎉 Goal achieved! Keep going!"}
               </p>
             </CardContent>
           </Card>
 
-          {/* Quick Stats */}
           <div className="lg:col-span-2 grid sm:grid-cols-2 gap-4">
             {[
               { label: "Total Weight", value: `${totalWeight.toFixed(1)} kg`, Icon: Scale },
@@ -119,7 +113,6 @@ export const Dashboard: React.FC = () => {
                 <Plus className="h-4 w-4 mr-2" />
                 Add Submission
               </Button>
-
             </CardContent>
           </Card>
 
@@ -147,15 +140,13 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Achievement Section */}
-        {totalPoints >= 300 && (
+        {totalPoints >= 100 && (
           <Card className="shadow-lg border-0 bg-gradient-to-r from-primary/10 to-primary-glow/10">
             <CardContent className="p-6 text-center">
               <Award className="h-12 w-12 text-primary mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-primary mb-2">
-                🎉 Achievement Unlocked!
-              </h3>
+              <h3 className="text-xl font-bold text-primary mb-2">🎉 Achievement Unlocked!</h3>
               <p className="text-muted-foreground">
-                Congratulations! You've reached your 300-point goal. Keep going!
+                Congratulations! You've reached your 100-point goal. Keep going!
               </p>
             </CardContent>
           </Card>
